@@ -27,6 +27,7 @@ include(Catch)
 add_library(vortexalloc INTERFACE)
 target_sources(vortexalloc INTERFACE 
       include/vortexalloc/allocator.hpp
+      include/vortexalloc/arena.hpp
       include/vortexalloc/chunk.hpp)
 
 target_include_directories(vortexalloc INTERFACE include)
@@ -41,6 +42,9 @@ catch_discover_tests(tests)
 add_executable(bench benchmark/arena_bench.cpp)
 target_link_libraries(bench PRIVATE vortexalloc)
 target_link_libraries(bench PRIVATE Catch2::Catch2WithMain)
+
+target_compile_options(bench PRIVATE -O3)
+target_compile_definitions(bench PRIVATE NDEBUG)
 
 set_target_properties(vortexalloc PROPERTIES FOLDER "Libs")
 set_target_properties(tests PROPERTIES FOLDER "Tests")
