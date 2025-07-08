@@ -1,0 +1,116 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake-configure",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S",
+                "${workspaceFolder}",
+                "-B",
+                "${workspaceFolder}/build",
+                "-DCMAKE_BUILD_TYPE=Debug"
+            ],
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "cmake-build-tests",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build",
+                "--target",
+                "tests",
+                "-j"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": "cmake-configure"
+        },
+        {
+            "label": "ctest-run",
+            "type": "shell",
+            "command": "ctest",
+            "args": [
+                "--output-on-failure",
+                "-C",
+                "Debug"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "problemMatcher": [],
+            "dependsOn": "cmake-build-tests"
+        },
+        {
+            "label": "Run Tests",
+            "dependsOn": [
+                "ctest-run"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "cmake-build-bench",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build",
+                "--target",
+                "bench",
+                "-j"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": "cmake-configure"
+        },
+        {
+            "label": "run-bench",
+            "type": "shell",
+            "command": "sh",
+            "args": [
+                "-c",
+                "${workspaceFolder}/build/bench > ${workspaceFolder}/benchmark_output.txt"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "dependsOn": "cmake-build-bench",
+            "group": "none"
+        },
+        {
+            "label": "parse-benchmarks",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/scripts/parse_benchmarks.py",
+                "${workspaceFolder}/benchmark_output.txt",
+                "${workspaceFolder}/benchmark_output.json"
+            ],
+            "problemMatcher": [],
+            "dependsOn": "run-bench",
+            "group": "none"
+        },
+        {
+            "label": "Run Benchmarks",
+            "dependsOn": [
+                "parse-benchmarks"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        }
+    ]
+}

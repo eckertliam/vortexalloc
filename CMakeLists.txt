@@ -40,6 +40,7 @@ catch_discover_tests(tests)
 # Benchmark
 add_executable(bench benchmark/arena_bench.cpp)
 target_link_libraries(bench PRIVATE vortexalloc)
+target_link_libraries(bench PRIVATE Catch2::Catch2WithMain)
 
 set_target_properties(vortexalloc PROPERTIES FOLDER "Libs")
 set_target_properties(tests PROPERTIES FOLDER "Tests")
