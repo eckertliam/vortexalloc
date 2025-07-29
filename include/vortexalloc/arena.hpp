@@ -1,7 +1,6 @@
 #pragma once
 
 #include "chunk.hpp"
-#include <cstddef>
 #include <new>
 
 struct Arena {
@@ -9,33 +8,33 @@ struct Arena {
   Chunk *head_;
   Chunk *current_;
 
-  Arena(std::size_t chunk_size)
+  explicit Arena(const std::size_t chunk_size)
       : chunk_size_(chunk_size), head_(nullptr), current_(nullptr) {}
 
   Arena() : head_(nullptr), current_(nullptr) {}
 
   ~Arena() {
-    Chunk *cur = head_;
+    const Chunk *cur = head_;
     while (cur) {
-      Chunk *next = cur->next;
+      const Chunk *next = cur->next;
       delete cur;
       cur = next;
     }
   }
 
-  void *allocate(std::size_t bytes, std::size_t align) {
+  void *allocate(const std::size_t bytes, const std::size_t align) {
     // if current is null allocate a new chunk
     // set head and current to the new chunk
     if (!current_) {
-      std::size_t size = std::max(bytes, chunk_size_);
+      const std::size_t size = std::max(bytes, chunk_size_);
       current_ = new Chunk(size);
       head_ = current_;
     }
 
-    // try toallocate from the current chunk
+    // try to allocate from the current chunk
     void *ptr = current_->try_allocate(bytes, align);
 
-    // if the allocation failed check if the current chunk has a next chunk
+    // if the allocation failed, check if the current chunk has a next chunk
     // if so, set current to the next chunk
     if (!ptr && current_->next) {
       current_ = current_->next;
@@ -47,6 +46,8 @@ struct Arena {
       ptr = current_->try_allocate(bytes, align);
     }
 
+    // if the allocation can't be made
+    // throw bad_alloc
     if (!ptr) {
       throw std::bad_alloc();
     }
@@ -55,6 +56,7 @@ struct Arena {
   }
 
   void reset() noexcept {
+    // iter over chunks and set each offset to 0
     for (auto *c = head_; c; c = c->next)
       c->offset = 0;
     current_ = head_;

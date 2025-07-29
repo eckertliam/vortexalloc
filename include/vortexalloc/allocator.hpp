@@ -35,8 +35,9 @@ public:
   using propagate_on_container_move_assignment = std::true_type;
   using is_always_equal = std::true_type;
 
-  ChunkAllocator(std::size_t chunk_size)
+  explicit ChunkAllocator(std::size_t chunk_size)
       : arena_(std::make_shared<Arena>(chunk_size)) {}
+
   ChunkAllocator() : arena_(std::make_shared<Arena>()) {}
 
   // Copy constructor – makes a fresh allocator that shares no state
@@ -44,7 +45,7 @@ public:
 
   // Converting copy constructor for rebinding
   template <class U>
-  ChunkAllocator(const ChunkAllocator<U> &other) noexcept
+  explicit ChunkAllocator(const ChunkAllocator<U> &other) noexcept
       : arena_(other.arena_) {}
 
   ~ChunkAllocator() = default;
@@ -59,8 +60,8 @@ public:
       return static_cast<T *>(detail::non_null_one_byte());
     }
 
-    std::size_t bytes = n * sizeof(T);
-    std::size_t align = alignof(T);
+    const std::size_t bytes = n * sizeof(T);
+    const std::size_t align = alignof(T);
 
     void *ptr = arena_->allocate(bytes, align);
 
@@ -70,7 +71,7 @@ public:
   // chunk allocator does nothing
   void deallocate(pointer p, std::size_t n) noexcept {}
 
-  size_type max_size() const noexcept {
+  [[nodiscard]] size_type max_size() const noexcept {
     return std::numeric_limits<size_type>::max() / sizeof(T);
   }
 
