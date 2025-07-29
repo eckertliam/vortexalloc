@@ -42,3 +42,7 @@
 
 build/
 .cache/
+.venv/
+cmake-build-debug/
+.idea/
+*.xml

@@ -9,15 +9,15 @@ struct Chunk {
   std::size_t capacity;
   std::size_t offset;
 
-  Chunk(std::size_t capacity)
+  explicit Chunk(const std::size_t capacity)
       : next(nullptr), memory(new std::byte[capacity]), capacity(capacity),
         offset(0) {}
 
   ~Chunk() { delete[] memory; }
 
-  void *try_allocate(std::size_t size,
-                     std::size_t align = alignof(std::max_align_t)) noexcept {
-    std::size_t aligned_offset = (offset + align - 1) & ~(align - 1);
+  void *try_allocate(const std::size_t size,
+                     const std::size_t align = alignof(std::max_align_t)) noexcept {
+    const std::size_t aligned_offset = (offset + align - 1) & ~(align - 1);
     if (aligned_offset + size > capacity) {
       return nullptr;
     }
