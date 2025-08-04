@@ -4,12 +4,13 @@
 #include <new>
 
 struct Arena {
-  std::size_t chunk_size_ = 1024 * 1024; // default: 1MB
+  std::size_t initial_chunk_size_ = 8 * 1024; // Start with 8KB
+  std::size_t max_chunk_size_ = 1024 * 1024;  // Max 1MB
   Chunk *head_;
   Chunk *current_;
 
-  explicit Arena(const std::size_t chunk_size)
-      : chunk_size_(chunk_size), head_(nullptr), current_(nullptr) {}
+  explicit Arena(const std::size_t initial_chunk_size)
+      : initial_chunk_size_(initial_chunk_size), head_(nullptr), current_(nullptr) {}
 
   Arena() : head_(nullptr), current_(nullptr) {}
 
@@ -26,7 +27,7 @@ struct Arena {
     // if current is null allocate a new chunk
     // set head and current to the new chunk
     if (!current_) {
-      const std::size_t size = std::max(bytes, chunk_size_);
+      const std::size_t size = std::max(bytes, initial_chunk_size_);
       current_ = new Chunk(size);
       head_ = current_;
     }
@@ -34,16 +35,25 @@ struct Arena {
     // try to allocate from the current chunk
     void *ptr = current_->try_allocate(bytes, align);
 
-    // if the allocation failed, check if the current chunk has a next chunk
-    // if so, set current to the next chunk
-    if (!ptr && current_->next) {
-      current_ = current_->next;
-      ptr = current_->try_allocate(bytes, align);
-    } else if (!ptr && !current_->next) {
-      // if the allocation failed and the current chunk has no next chunk
-      // allocate a new chunk
-      current_ = current_->alloc_next(bytes);
-      ptr = current_->try_allocate(bytes, align);
+    // if the allocation failed, try to find space in existing chunks first
+    if (!ptr) {
+      // search through existing chunks for space
+      for (Chunk *chunk = head_; chunk; chunk = chunk->next) {
+        ptr = chunk->try_allocate(bytes, align);
+        if (ptr) {
+          current_ = chunk; // Update current to the chunk we found space in
+          break;
+        }
+      }
+      
+      // if no space found in existing chunks allocate a new one with progressive sizing
+      if (!ptr) {
+        const std::size_t current_chunk_size = current_->capacity;
+        const std::size_t next_chunk_size = std::min(current_chunk_size * 2, max_chunk_size_);
+        const std::size_t required_size = std::max(bytes, next_chunk_size);
+        current_ = current_->alloc_next(required_size);
+        ptr = current_->try_allocate(bytes, align);
+      }
     }
 
     // if the allocation can't be made
